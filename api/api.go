@@ -4,15 +4,17 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/BarTar213/go-template/config"
+	"github.com/BarTar213/auth-service/config"
+	"github.com/BarTar213/auth-service/storage"
 	"github.com/gin-gonic/gin"
 )
 
 type Api struct {
-	Port   string
-	Router *gin.Engine
-	Config *config.Config
-	Logger *log.Logger
+	Port    string
+	Router  *gin.Engine
+	Config  *config.Config
+	Storage storage.Client
+	Logger  *log.Logger
 }
 
 func WithConfig(conf *config.Config) func(a *Api) {
@@ -24,6 +26,12 @@ func WithConfig(conf *config.Config) func(a *Api) {
 func WithLogger(logger *log.Logger) func(a *Api) {
 	return func(a *Api) {
 		a.Logger = logger
+	}
+}
+
+func WithStorage(storage storage.Client) func(a *Api) {
+	return func(a *Api) {
+		a.Storage = storage
 	}
 }
 

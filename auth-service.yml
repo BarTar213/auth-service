@@ -1,0 +1,9 @@
+api:
+  port: ":8080"
+  timeout: 5s
+  release: false
+postgres:
+  address: "localhost:5432"
+  user: "postgres"
+  password: "admin"
+  database: "vimo"

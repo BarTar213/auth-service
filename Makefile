@@ -1,7 +1,7 @@
 .PHONY: install test binary cover cover-total
 
 binary:
-	@go build -o app_name ./cmd/app_name
+	@go build -o auth-service ./cmd/auth-service
 
 install:
 	go install ./...
