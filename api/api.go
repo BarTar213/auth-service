@@ -45,7 +45,16 @@ func NewApi(options ...func(api *Api)) *Api {
 		option(a)
 	}
 
+	usr := NewUserHandlers(a.Storage, a.Logger)
+
 	a.Router.GET("/", a.health)
+
+	users := a.Router.Group("/users/:login")
+	{
+		users.GET("", usr.GetUser)
+		users.PUT("")
+		users.DELETE("", usr.DeleteUser)
+	}
 
 	return a
 }

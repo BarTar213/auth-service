@@ -5,7 +5,12 @@ import (
 	"time"
 
 	"github.com/BarTar213/auth-service/config"
+	"github.com/BarTar213/auth-service/models"
 	"github.com/go-pg/pg/v10"
+)
+
+const (
+	all = "*"
 )
 
 type Postgres struct {
@@ -13,6 +18,9 @@ type Postgres struct {
 }
 
 type Client interface {
+	GetUserByID(user *models.User) error
+	GetUserByLogin(user *models.User) error
+	DeleteUser(login string) error
 }
 
 func NewPostgres(config *config.Postgres) (Client, error) {
