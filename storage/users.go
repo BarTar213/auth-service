@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/BarTar213/auth-service/models"
 	"github.com/go-pg/pg/v10"
+	"sync"
 )
 
 func (p *Postgres) GetUserByID(user *models.User) error {
@@ -14,6 +15,43 @@ func (p *Postgres) GetUserByLogin(user *models.User) error {
 	return p.db.Model(user).
 		Where("login = ?login").
 		Select()
+}
+
+func (p *Postgres) GetAllUserInfo(login string, user *models.User, userAuth *models.UserAuth) error {
+	var wg sync.WaitGroup
+	var mu sync.Mutex
+
+	var firstErr error
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		err := p.db.Model(user).Where("login=?", login).Select()
+		if err != nil {
+			mu.Lock()
+			if firstErr == nil {
+				firstErr = err
+			}
+			mu.Unlock()
+		}
+	}()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		var err error
+		err = p.db.Model(userAuth).Where("login=?", login).Select()
+		if err != nil {
+			mu.Lock()
+			if firstErr == nil {
+				firstErr = err
+			}
+			mu.Unlock()
+		}
+	}()
+
+	wg.Wait()
+	return firstErr
 }
 
 func (p *Postgres) AddUser(user *models.User, userAuth *models.UserAuth) error {

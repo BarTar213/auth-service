@@ -21,6 +21,7 @@ type Client interface {
 	AddUser(user *models.User, userAuth *models.UserAuth) error
 	GetUserByID(user *models.User) error
 	GetUserByLogin(user *models.User) error
+	GetAllUserInfo(login string, user *models.User, userAuth *models.UserAuth) error
 	DeleteUser(login string) error
 
 	GetVerificationCode(login string) (string, error)

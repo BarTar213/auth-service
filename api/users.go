@@ -12,11 +12,8 @@ import (
 )
 
 const (
-	loginKey = "login"
-	codeKey  = "code"
-
-	invalidLoginParamErr            = "invalid login param"
-	invalidVerificationCodeParamErr = "invalid verification code param"
+	keyLogin = "login"
+	keyCode  = "code"
 )
 
 type UserHandlers struct {
@@ -45,15 +42,16 @@ func (h *UserHandlers) AddUser(c *gin.Context) {
 
 	user.Verified = false
 	user.Password = utils.EmptyString
+	user.Role = utils.RoleStandard
 	userAuth := &models.UserAuth{
 		Login:            user.Login,
 		Password:         hash,
-		VerificationCode: auth.GenerateCode(),
+		VerificationCode: auth.GenerateVerificationCode(),
 	}
 
 	err = h.storage.AddUser(user, userAuth)
 	if err != nil {
-		handlePostgresError(c, h.logger, err, userResource)
+		handlePostgresError(c, h.logger, err, resourceUser)
 		return
 	}
 
@@ -66,7 +64,7 @@ func (h *UserHandlers) GetCurrentUser(c *gin.Context) {
 	user := &models.User{ID: account.ID}
 	err := h.storage.GetUserByID(user)
 	if err != nil {
-		handlePostgresError(c, h.logger, err, userResource)
+		handlePostgresError(c, h.logger, err, resourceUser)
 		return
 	}
 
@@ -74,7 +72,7 @@ func (h *UserHandlers) GetCurrentUser(c *gin.Context) {
 }
 
 func (h *UserHandlers) GetUser(c *gin.Context) {
-	login := c.Param(loginKey)
+	login := c.Param(keyLogin)
 	if len(login) == 0 {
 		c.JSON(http.StatusBadRequest, &models.Response{Error: invalidLoginParamErr})
 		return
@@ -83,7 +81,7 @@ func (h *UserHandlers) GetUser(c *gin.Context) {
 	user := &models.User{Login: login}
 	err := h.storage.GetUserByLogin(user)
 	if err != nil {
-		handlePostgresError(c, h.logger, err, userResource)
+		handlePostgresError(c, h.logger, err, resourceUser)
 		return
 	}
 
@@ -91,7 +89,7 @@ func (h *UserHandlers) GetUser(c *gin.Context) {
 }
 
 func (h *UserHandlers) DeleteUser(c *gin.Context) {
-	login := c.Param(loginKey)
+	login := c.Param(keyLogin)
 	if len(login) == 0 {
 		c.JSON(http.StatusBadRequest, &models.Response{Error: invalidLoginParamErr})
 		return
@@ -99,7 +97,7 @@ func (h *UserHandlers) DeleteUser(c *gin.Context) {
 
 	err := h.storage.DeleteUser(login)
 	if err != nil {
-		handlePostgresError(c, h.logger, err, userResource)
+		handlePostgresError(c, h.logger, err, resourceUser)
 		return
 	}
 
@@ -107,13 +105,13 @@ func (h *UserHandlers) DeleteUser(c *gin.Context) {
 }
 
 func (h *UserHandlers) VerifyUser(c *gin.Context) {
-	login := c.Param(loginKey)
+	login := c.Param(keyLogin)
 	if len(login) == 0 {
 		c.JSON(http.StatusBadRequest, &models.Response{Error: invalidLoginParamErr})
 		return
 	}
 
-	code := c.Param(codeKey)
+	code := c.Param(keyCode)
 	if len(code) == 0 {
 		c.JSON(http.StatusBadRequest, &models.Response{Error: invalidLoginParamErr})
 		return
@@ -121,7 +119,7 @@ func (h *UserHandlers) VerifyUser(c *gin.Context) {
 
 	correctCode, err := h.storage.GetVerificationCode(login)
 	if err != nil {
-		handlePostgresError(c, h.logger, err, userResource)
+		handlePostgresError(c, h.logger, err, resourceUser)
 		return
 	}
 
@@ -132,7 +130,7 @@ func (h *UserHandlers) VerifyUser(c *gin.Context) {
 
 	err = h.storage.SetVerified(login, true)
 	if err != nil {
-		handlePostgresError(c, h.logger, err, userResource)
+		handlePostgresError(c, h.logger, err, resourceUser)
 		return
 	}
 

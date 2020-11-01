@@ -45,22 +45,23 @@ func NewApi(options ...func(api *Api)) *Api {
 		option(a)
 	}
 
-	usr := NewUserHandlers(a.Storage, a.Logger)
+	usrHdlr := NewUserHandlers(a.Storage, a.Logger)
+	authHdlr := NewAuthHandlers(a.Storage, a.Logger)
 
 	a.Router.GET("/", a.health)
 
 	users := a.Router.Group("/users")
 	{
-		users.POST("", usr.AddUser)
-		users.GET("/:login", usr.GetUser)
-		users.PATCH("/:login/verify/:code", usr.VerifyUser)
+		users.POST("", usrHdlr.AddUser)
+		users.GET("/:login", usrHdlr.GetUser)
+		users.PATCH("/:login/verify/:code", usrHdlr.VerifyUser)
 		users.PUT("/:login")
-		users.DELETE("/:login", usr.DeleteUser)
+		users.DELETE("/:login", usrHdlr.DeleteUser)
 	}
 
 	auth := a.Router.Group("/auth")
 	{
-		auth.POST("/login")
+		auth.POST("/login", authHdlr.Login)
 		auth.GET("/logout")
 	}
 

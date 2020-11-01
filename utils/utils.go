@@ -7,6 +7,11 @@ import (
 
 const EmptyString = ""
 
+const (
+	RoleStandard = "standard_user"
+	RoleEditor   = "editor"
+)
+
 //returns account information for user
 func GetAccount(c *gin.Context) *models.AccountInfo {
 	account := c.Keys["account"].(models.AccountInfo)
