@@ -18,9 +18,13 @@ type Postgres struct {
 }
 
 type Client interface {
+	AddUser(user *models.User, userAuth *models.UserAuth) error
 	GetUserByID(user *models.User) error
 	GetUserByLogin(user *models.User) error
 	DeleteUser(login string) error
+
+	GetVerificationCode(login string) (string, error)
+	SetVerified(login string, isVerified bool) error
 }
 
 func NewPostgres(config *config.Postgres) (Client, error) {

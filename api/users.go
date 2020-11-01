@@ -1,6 +1,7 @@
 package api
 
 import (
+	"github.com/BarTar213/auth-service/auth"
 	"log"
 	"net/http"
 
@@ -12,8 +13,10 @@ import (
 
 const (
 	loginKey = "login"
+	codeKey  = "code"
 
-	invalidLoginParamErr = "invalid login param"
+	invalidLoginParamErr            = "invalid login param"
+	invalidVerificationCodeParamErr = "invalid verification code param"
 )
 
 type UserHandlers struct {
@@ -23,6 +26,38 @@ type UserHandlers struct {
 
 func NewUserHandlers(storage storage.Client, logger *log.Logger) *UserHandlers {
 	return &UserHandlers{storage: storage, logger: logger}
+}
+
+func (h *UserHandlers) AddUser(c *gin.Context) {
+	user := &models.User{}
+	err := c.ShouldBindJSON(user)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, &models.Response{Error: invalidRequestBodyErr})
+		return
+	}
+
+	hash, err := auth.GetPasswordHash(user.Password)
+	if err != nil {
+		h.logger.Printf("GetPasswordHash: %s", err)
+		c.JSON(http.StatusInternalServerError, &models.Response{Error: "hash generating"})
+		return
+	}
+
+	user.Verified = false
+	user.Password = utils.EmptyString
+	userAuth := &models.UserAuth{
+		Login:            user.Login,
+		Password:         hash,
+		VerificationCode: auth.GenerateCode(),
+	}
+
+	err = h.storage.AddUser(user, userAuth)
+	if err != nil {
+		handlePostgresError(c, h.logger, err, userResource)
+		return
+	}
+
+	c.JSON(http.StatusCreated, user)
 }
 
 func (h *UserHandlers) GetCurrentUser(c *gin.Context) {
@@ -41,7 +76,7 @@ func (h *UserHandlers) GetCurrentUser(c *gin.Context) {
 func (h *UserHandlers) GetUser(c *gin.Context) {
 	login := c.Param(loginKey)
 	if len(login) == 0 {
-		c.JSON(http.StatusOK, &models.Response{Error: invalidLoginParamErr})
+		c.JSON(http.StatusBadRequest, &models.Response{Error: invalidLoginParamErr})
 		return
 	}
 
@@ -58,7 +93,7 @@ func (h *UserHandlers) GetUser(c *gin.Context) {
 func (h *UserHandlers) DeleteUser(c *gin.Context) {
 	login := c.Param(loginKey)
 	if len(login) == 0 {
-		c.JSON(http.StatusOK, &models.Response{Error: invalidLoginParamErr})
+		c.JSON(http.StatusBadRequest, &models.Response{Error: invalidLoginParamErr})
 		return
 	}
 
@@ -69,4 +104,37 @@ func (h *UserHandlers) DeleteUser(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, &models.Response{})
+}
+
+func (h *UserHandlers) VerifyUser(c *gin.Context) {
+	login := c.Param(loginKey)
+	if len(login) == 0 {
+		c.JSON(http.StatusBadRequest, &models.Response{Error: invalidLoginParamErr})
+		return
+	}
+
+	code := c.Param(codeKey)
+	if len(code) == 0 {
+		c.JSON(http.StatusBadRequest, &models.Response{Error: invalidLoginParamErr})
+		return
+	}
+
+	correctCode, err := h.storage.GetVerificationCode(login)
+	if err != nil {
+		handlePostgresError(c, h.logger, err, userResource)
+		return
+	}
+
+	if code != correctCode {
+		c.JSON(http.StatusBadRequest, &models.Response{Error: invalidVerificationCodeParamErr})
+		return
+	}
+
+	err = h.storage.SetVerified(login, true)
+	if err != nil {
+		handlePostgresError(c, h.logger, err, userResource)
+		return
+	}
+
+	c.JSON(http.StatusOK, &models.Response{Data: "account verified"})
 }

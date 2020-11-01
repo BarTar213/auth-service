@@ -19,3 +19,11 @@ func NewAuthHandlers(storage storage.Client, logger *log.Logger) *AuthHandlers {
 func (h *AuthHandlers) Authorize(c *gin.Context) {
 
 }
+
+func (h *AuthHandlers) Login(c *gin.Context) {
+
+}
+
+func (h *AuthHandlers) Logout(c *gin.Context) {
+
+}

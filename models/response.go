@@ -1,5 +1,6 @@
 package models
 
 type Response struct {
-	Error string `json:"error,omitempty"`
+	Data  interface{} `json:"data,omitempty"`
+	Error string      `json:"error,omitempty"`
 }

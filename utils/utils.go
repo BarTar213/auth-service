@@ -5,6 +5,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+const EmptyString = ""
+
 //returns account information for user
 func GetAccount(c *gin.Context) *models.AccountInfo {
 	account := c.Keys["account"].(models.AccountInfo)

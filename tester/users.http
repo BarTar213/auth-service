@@ -2,3 +2,19 @@ GET http://localhost:8081/users/bar
 Accept: application/json
 
 ###
+
+POST http://localhost:8081/users
+Accept: application/json
+Content-Type: application/json
+
+{
+  "name": "name",
+  "email": "email",
+  "login": "login",
+  "password": "password"
+}
+###
+
+PATCH http://localhost:8081/users/login/verify/3UgKFEPVBht4eL9h9bbB
+Accept: application/json
+Content-Type: application/json

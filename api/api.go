@@ -49,11 +49,19 @@ func NewApi(options ...func(api *Api)) *Api {
 
 	a.Router.GET("/", a.health)
 
-	users := a.Router.Group("/users/:login")
+	users := a.Router.Group("/users")
 	{
-		users.GET("", usr.GetUser)
-		users.PUT("")
-		users.DELETE("", usr.DeleteUser)
+		users.POST("", usr.AddUser)
+		users.GET("/:login", usr.GetUser)
+		users.PATCH("/:login/verify/:code", usr.VerifyUser)
+		users.PUT("/:login")
+		users.DELETE("/:login", usr.DeleteUser)
+	}
+
+	auth := a.Router.Group("/auth")
+	{
+		auth.POST("/login")
+		auth.GET("/logout")
 	}
 
 	return a
