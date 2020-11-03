@@ -10,3 +10,7 @@ postgres:
 headers:
   account: "X-Account"
   id: "X-Account-Id"
+jwt:
+  path: "secret"
+  issuer: "localhost:8081"
+  cookieName: "access_token"

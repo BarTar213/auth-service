@@ -4,17 +4,19 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/BarTar213/auth-service/auth"
 	"github.com/BarTar213/auth-service/config"
 	"github.com/BarTar213/auth-service/storage"
 	"github.com/gin-gonic/gin"
 )
 
 type Api struct {
-	Port    string
-	Router  *gin.Engine
-	Config  *config.Config
-	Storage storage.Client
-	Logger  *log.Logger
+	Port      string
+	Router    *gin.Engine
+	Config    *config.Config
+	Storage   storage.Client
+	JWTClient *auth.JWT
+	Logger    *log.Logger
 }
 
 func WithConfig(conf *config.Config) func(a *Api) {
@@ -35,6 +37,12 @@ func WithStorage(storage storage.Client) func(a *Api) {
 	}
 }
 
+func WithJWTClient(jwtClient *auth.JWT) func(a *Api) {
+	return func(a *Api) {
+		a.JWTClient = jwtClient
+	}
+}
+
 func NewApi(options ...func(api *Api)) *Api {
 	a := &Api{
 		Router: gin.Default(),
@@ -46,7 +54,7 @@ func NewApi(options ...func(api *Api)) *Api {
 	}
 
 	usrHdlr := NewUserHandlers(a.Storage, a.Logger)
-	authHdlr := NewAuthHandlers(a.Storage, a.Logger)
+	authHdlr := NewAuthHandlers(a.Storage, a.JWTClient, a.Logger)
 
 	a.Router.GET("/", a.health)
 
@@ -59,10 +67,10 @@ func NewApi(options ...func(api *Api)) *Api {
 		users.DELETE("/:login", usrHdlr.DeleteUser)
 	}
 
-	auth := a.Router.Group("/auth")
+	auths := a.Router.Group("/auth")
 	{
-		auth.POST("/login", authHdlr.Login)
-		auth.GET("/logout")
+		auths.POST("/login", authHdlr.Login)
+		auths.GET("/logout")
 	}
 
 	return a

@@ -1,25 +1,35 @@
 package api
 
 import (
-	"github.com/BarTar213/auth-service/auth"
-	"github.com/BarTar213/auth-service/models"
 	"log"
 	"net/http"
 
+	"github.com/BarTar213/auth-service/auth"
+	"github.com/BarTar213/auth-service/models"
 	"github.com/BarTar213/auth-service/storage"
 	"github.com/gin-gonic/gin"
 )
 
 type AuthHandlers struct {
-	storage storage.Client
-	logger  *log.Logger
+	storage   storage.Client
+	jwtClient *auth.JWT
+	logger    *log.Logger
 }
 
-func NewAuthHandlers(storage storage.Client, logger *log.Logger) *AuthHandlers {
-	return &AuthHandlers{storage: storage, logger: logger}
+func NewAuthHandlers(storage storage.Client, jwtClient *auth.JWT, logger *log.Logger) *AuthHandlers {
+	return &AuthHandlers{
+		storage:   storage,
+		jwtClient: jwtClient,
+		logger:    logger,
+	}
 }
 
 func (h *AuthHandlers) Authorize(c *gin.Context) {
+	cookie, err := c.Cookie(h.jwtClient.GetCookieName())
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, &models.Response{Data: "user not unauthorized"})
+	}
+
 
 }
 
@@ -46,12 +56,13 @@ func (h *AuthHandlers) Login(c *gin.Context) {
 		return
 	}
 
-	err = auth.GenerateJWT(user)
+	cookie, err := h.jwtClient.GetJWTCookie(user)
 	if err != nil {
-		h.logger.Printf("Generate JWT: %s", err)
+		h.logger.Printf("generate JWT: %s", err)
 		c.JSON(http.StatusInternalServerError, &models.Response{Error: "creating token error"})
 		return
 	}
+	http.SetCookie(c.Writer, cookie)
 
 	c.JSON(http.StatusOK, &models.Response{Data: "successfully logged in"})
 }

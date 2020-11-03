@@ -10,6 +10,7 @@ import (
 type Config struct {
 	Api      Api
 	Postgres Postgres
+	JWT      JWT
 }
 
 type Api struct {
@@ -23,6 +24,12 @@ type Postgres struct {
 	User     string
 	Password string
 	Database string
+}
+
+type JWT struct {
+	Path       string
+	Issuer     string
+	CookieName string
 }
 
 func NewConfig(fileName string) *Config {

@@ -1,10 +1,10 @@
 package api
 
 import (
-	"github.com/BarTar213/auth-service/auth"
 	"log"
 	"net/http"
 
+	"github.com/BarTar213/auth-service/auth"
 	"github.com/BarTar213/auth-service/models"
 	"github.com/BarTar213/auth-service/storage"
 	"github.com/BarTar213/auth-service/utils"

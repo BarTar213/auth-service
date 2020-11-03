@@ -2,9 +2,10 @@ package storage
 
 import (
 	"context"
+	"sync"
+
 	"github.com/BarTar213/auth-service/models"
 	"github.com/go-pg/pg/v10"
-	"sync"
 )
 
 func (p *Postgres) GetUserByID(user *models.User) error {

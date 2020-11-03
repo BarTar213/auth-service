@@ -7,6 +7,7 @@ import (
 	"syscall"
 
 	"github.com/BarTar213/auth-service/api"
+	"github.com/BarTar213/auth-service/auth"
 	"github.com/BarTar213/auth-service/config"
 	"github.com/BarTar213/auth-service/storage"
 	"github.com/gin-gonic/gin"
@@ -27,10 +28,16 @@ func main() {
 		logger.Fatalln(err)
 	}
 
+	jwtClient, err := auth.NewJWT(conf.JWT)
+	if err != nil {
+		logger.Fatalln(err)
+	}
+
 	a := api.NewApi(
 		api.WithConfig(conf),
 		api.WithLogger(logger),
 		api.WithStorage(postgres),
+		api.WithJWTClient(jwtClient),
 	)
 
 	go a.Run()
