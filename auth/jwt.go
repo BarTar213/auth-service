@@ -10,6 +10,7 @@ import (
 	"github.com/BarTar213/auth-service/models"
 	"github.com/BarTar213/auth-service/utils"
 	"github.com/dgrijalva/jwt-go"
+	"github.com/gin-gonic/gin"
 )
 
 type JWT struct {
@@ -54,7 +55,12 @@ func (j *JWT) generateJWT(user *models.User) (string, *time.Time, error) {
 }
 
 func (j *JWT) generateJWTFromClaims(claims *models.Claims) (string, *time.Time, error) {
-	expiry := time.Now().Add(2 * time.Hour)
+	now := time.Now()
+	if time.Unix(claims.ExpiresAt, 0).After(now.Add(-1 * time.Hour)) {
+		return utils.EmptyString, nil, errors.New("token expired")
+	}
+
+	expiry := now.Add(2 * time.Hour)
 	claims.ExpiresAt = expiry.Unix()
 
 	signedToken, err := j.signClaims(claims)
@@ -89,19 +95,40 @@ func (j *JWT) GetJWTCookie(user *models.User) (*http.Cookie, error) {
 	}, nil
 }
 
-func (j *JWT) ValidateCookie(cookie *http.Cookie) {
+//returns true if JWT from cookie is expired and cookie should be updated
+//returns error in case of invalid JWT
+func (j *JWT) ValidateCookieJWT(cookie *http.Cookie) (bool, *models.Claims, error) {
 	tkn := cookie.Value
 
 	claims := &models.Claims{}
 	token, err := jwt.ParseWithClaims(tkn, claims, func(token *jwt.Token) (interface{}, error) {
 		return j.secret, nil
 	})
+
 	if err != nil {
 		var valErr *jwt.ValidationError
-		if errors.As(err, valErr) {
+		if errors.As(err, &valErr) {
 			if valErr.Errors&jwt.ValidationErrorExpired != 0 {
-
+				token, expires, err := j.generateJWTFromClaims(claims)
+				if err != nil {
+					return false, nil, err
+				}
+				cookie.Expires = *expires
+				cookie.Value = token
+				return true, claims, nil
 			}
 		}
 	}
+
+	if !token.Valid {
+		return false, claims, errors.New("invalid token")
+	}
+
+	return false, claims, nil
+}
+
+func (j *JWT) SetAuthHeaders(c *gin.Context, claims *models.Claims) {
+	c.Header("X-Account-Id", claims.Id)
+	c.Header("X-Account", claims.Login)
+	c.Header("X-Role", claims.Role)
 }

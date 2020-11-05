@@ -1,4 +1,4 @@
-GET http://localhost:8081/users/bar
+GET http://localhost:8081/users/login
 Accept: application/json
 
 ###

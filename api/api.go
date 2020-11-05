@@ -6,6 +6,7 @@ import (
 
 	"github.com/BarTar213/auth-service/auth"
 	"github.com/BarTar213/auth-service/config"
+	"github.com/BarTar213/auth-service/middleware"
 	"github.com/BarTar213/auth-service/storage"
 	"github.com/gin-gonic/gin"
 )
@@ -60,6 +61,8 @@ func NewApi(options ...func(api *Api)) *Api {
 
 	users := a.Router.Group("/users")
 	{
+		users.Use(middleware.CheckAccount())
+
 		users.POST("", usrHdlr.AddUser)
 		users.GET("/:login", usrHdlr.GetUser)
 		users.PATCH("/:login/verify/:code", usrHdlr.VerifyUser)
@@ -70,7 +73,8 @@ func NewApi(options ...func(api *Api)) *Api {
 	auths := a.Router.Group("/auth")
 	{
 		auths.POST("/login", authHdlr.Login)
-		auths.GET("/logout")
+		auths.GET("/logout", authHdlr.Logout)
+		auths.POST("/authorize", authHdlr.Authorize)
 	}
 
 	return a

@@ -3,10 +3,12 @@ package api
 import (
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/BarTar213/auth-service/auth"
 	"github.com/BarTar213/auth-service/models"
 	"github.com/BarTar213/auth-service/storage"
+	"github.com/BarTar213/auth-service/utils"
 	"github.com/gin-gonic/gin"
 )
 
@@ -25,12 +27,23 @@ func NewAuthHandlers(storage storage.Client, jwtClient *auth.JWT, logger *log.Lo
 }
 
 func (h *AuthHandlers) Authorize(c *gin.Context) {
-	cookie, err := c.Cookie(h.jwtClient.GetCookieName())
+	cookie, err := c.Request.Cookie(h.jwtClient.GetCookieName())
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, &models.Response{Data: "user not unauthorized"})
+		c.JSON(http.StatusUnauthorized, &models.Response{Error: "missing access token"})
+		return
 	}
 
+	isRefreshed, claims, err := h.jwtClient.ValidateCookieJWT(cookie)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, &models.Response{Error: "unauthorized"})
+		return
+	}
+	if isRefreshed {
+		http.SetCookie(c.Writer, cookie)
+	}
 
+	h.jwtClient.SetAuthHeaders(c, claims)
+	c.JSON(http.StatusOK, &models.Response{Data: "successfully authorized"})
 }
 
 func (h *AuthHandlers) Login(c *gin.Context) {
@@ -68,5 +81,15 @@ func (h *AuthHandlers) Login(c *gin.Context) {
 }
 
 func (h *AuthHandlers) Logout(c *gin.Context) {
+	cookie, err := c.Request.Cookie(h.jwtClient.GetCookieName())
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, &models.Response{Error: "missing access token"})
+		return
+	}
 
+	cookie.Expires = time.Unix(0, 0)
+	cookie.Value = utils.EmptyString
+	http.SetCookie(c.Writer, cookie)
+
+	c.JSON(http.StatusOK, &models.Response{Data: "successfully logged out"})
 }

@@ -7,3 +7,16 @@ Content-Type: application/json
   "password": "password"
 }
 ###
+
+GET http://localhost:8081/auth/logout
+Accept: application/json
+Content-Type: application/json
+Cookie: name=value
+
+###
+
+POST http://localhost:8081/auth/authorize
+Accept: application/json
+Content-Type: application/json
+Cookie: name=value
+###
