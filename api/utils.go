@@ -13,7 +13,7 @@ import (
 const (
 	invalidRequestBodyErr           = "invalid request body"
 	invalidLoginParamErr            = "invalid login param"
-	invalidVerificationCodeParamErr = "invalid verification code param"
+	invalidVerificationCodeParamErr = "invalid verification code query param"
 	invalidUserCredentials          = "invalid user credentials"
 
 	resourceUser = "user"

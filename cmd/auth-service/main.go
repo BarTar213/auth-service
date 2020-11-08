@@ -10,6 +10,7 @@ import (
 	"github.com/BarTar213/auth-service/auth"
 	"github.com/BarTar213/auth-service/config"
 	"github.com/BarTar213/auth-service/storage"
+	notificator "github.com/BarTar213/notificator/client"
 	"github.com/gin-gonic/gin"
 )
 
@@ -23,11 +24,16 @@ func main() {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
+	logger.Println("Connecting to postgresql")
 	postgres, err := storage.NewPostgres(&conf.Postgres)
 	if err != nil {
 		logger.Fatalln(err)
 	}
 
+	logger.Println("Creating notificator")
+	notificatorClient := notificator.New(conf.Notificator.Address, conf.Api.Timeout)
+
+	logger.Println("Creating JWT client")
 	jwtClient, err := auth.NewJWT(conf.JWT)
 	if err != nil {
 		logger.Fatalln(err)
@@ -38,6 +44,7 @@ func main() {
 		api.WithLogger(logger),
 		api.WithStorage(postgres),
 		api.WithJWTClient(jwtClient),
+		api.WithNotificator(notificatorClient),
 	)
 
 	go a.Run()

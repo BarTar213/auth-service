@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"log"
 	"net/http"
 
@@ -8,6 +9,8 @@ import (
 	"github.com/BarTar213/auth-service/models"
 	"github.com/BarTar213/auth-service/storage"
 	"github.com/BarTar213/auth-service/utils"
+	notificator "github.com/BarTar213/notificator/client"
+	"github.com/BarTar213/notificator/senders"
 	"github.com/gin-gonic/gin"
 )
 
@@ -17,12 +20,17 @@ const (
 )
 
 type UserHandlers struct {
-	storage storage.Client
-	logger  *log.Logger
+	storage     storage.Client
+	notificator notificator.Client
+	logger      *log.Logger
 }
 
-func NewUserHandlers(storage storage.Client, logger *log.Logger) *UserHandlers {
-	return &UserHandlers{storage: storage, logger: logger}
+func NewUserHandlers(storage storage.Client, notificator notificator.Client, logger *log.Logger) *UserHandlers {
+	return &UserHandlers{
+		storage:     storage,
+		notificator: notificator,
+		logger:      logger,
+	}
 }
 
 func (h *UserHandlers) AddUser(c *gin.Context) {
@@ -54,6 +62,8 @@ func (h *UserHandlers) AddUser(c *gin.Context) {
 		handlePostgresError(c, h.logger, err, resourceUser)
 		return
 	}
+
+	go h.sendEmailNotification(user.Login, user.Email, userAuth.VerificationCode)
 
 	c.JSON(http.StatusCreated, user)
 }
@@ -111,9 +121,9 @@ func (h *UserHandlers) VerifyUser(c *gin.Context) {
 		return
 	}
 
-	code := c.Param(keyCode)
+	code := c.Query(keyCode)
 	if len(code) == 0 {
-		c.JSON(http.StatusBadRequest, &models.Response{Error: invalidLoginParamErr})
+		c.JSON(http.StatusBadRequest, &models.Response{Error: invalidVerificationCodeParamErr})
 		return
 	}
 
@@ -135,4 +145,21 @@ func (h *UserHandlers) VerifyUser(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, &models.Response{Data: "account verified"})
+}
+
+func (h *UserHandlers) sendEmailNotification(login, email, verificationCode string) {
+	status, response, err := h.notificator.SendEmail(context.Background(), "mailVerification", &senders.Email{
+		Recipients: []string{email},
+		Data: map[string]string{
+			"user": login,
+			"code": verificationCode,
+		},
+	})
+	if err != nil {
+		h.logger.Printf("Unsucessfully send email to %s: %s", email, err)
+		return
+	}
+	if status != http.StatusAccepted {
+		h.logger.Printf("Unsucessfully send email to %s: %v", email, response)
+	}
 }

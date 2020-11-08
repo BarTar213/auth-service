@@ -8,16 +8,18 @@ import (
 	"github.com/BarTar213/auth-service/config"
 	"github.com/BarTar213/auth-service/middleware"
 	"github.com/BarTar213/auth-service/storage"
+	notificator "github.com/BarTar213/notificator/client"
 	"github.com/gin-gonic/gin"
 )
 
 type Api struct {
-	Port      string
-	Router    *gin.Engine
-	Config    *config.Config
-	Storage   storage.Client
-	JWTClient *auth.JWT
-	Logger    *log.Logger
+	Port        string
+	Router      *gin.Engine
+	Config      *config.Config
+	Storage     storage.Client
+	JWTClient   *auth.JWT
+	Notificator notificator.Client
+	Logger      *log.Logger
 }
 
 func WithConfig(conf *config.Config) func(a *Api) {
@@ -44,6 +46,12 @@ func WithJWTClient(jwtClient *auth.JWT) func(a *Api) {
 	}
 }
 
+func WithNotificator(notificator notificator.Client) func(a *Api) {
+	return func(a *Api) {
+		a.Notificator = notificator
+	}
+}
+
 func NewApi(options ...func(api *Api)) *Api {
 	a := &Api{
 		Router: gin.Default(),
@@ -54,20 +62,23 @@ func NewApi(options ...func(api *Api)) *Api {
 		option(a)
 	}
 
-	usrHdlr := NewUserHandlers(a.Storage, a.Logger)
+	usrHdlr := NewUserHandlers(a.Storage, a.Notificator, a.Logger)
 	authHdlr := NewAuthHandlers(a.Storage, a.JWTClient, a.Logger)
 
 	a.Router.GET("/", a.health)
 
 	users := a.Router.Group("/users")
 	{
-		users.Use(middleware.CheckAccount())
+		authorized := users.Group("")
+		{
+			authorized.Use(middleware.CheckAccount())
 
+			authorized.GET("/:login", usrHdlr.GetUser)
+			authorized.PUT("/:login")
+			authorized.DELETE("/:login", usrHdlr.DeleteUser)
+		}
 		users.POST("", usrHdlr.AddUser)
-		users.GET("/:login", usrHdlr.GetUser)
-		users.PATCH("/:login/verify/:code", usrHdlr.VerifyUser)
-		users.PUT("/:login")
-		users.DELETE("/:login", usrHdlr.DeleteUser)
+		users.PATCH("/:login/verify", usrHdlr.VerifyUser)
 	}
 
 	auths := a.Router.Group("/auth")

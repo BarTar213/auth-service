@@ -109,9 +109,9 @@ func (j *JWT) ValidateCookieJWT(cookie *http.Cookie) (bool, *models.Claims, erro
 		var valErr *jwt.ValidationError
 		if errors.As(err, &valErr) {
 			if valErr.Errors&jwt.ValidationErrorExpired != 0 {
-				token, expires, err := j.generateJWTFromClaims(claims)
-				if err != nil {
-					return false, nil, err
+				token, expires, genErr := j.generateJWTFromClaims(claims)
+				if genErr != nil {
+					return false, nil, genErr
 				}
 				cookie.Expires = *expires
 				cookie.Value = token

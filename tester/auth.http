@@ -18,5 +18,5 @@ Cookie: name=value
 POST http://localhost:8081/auth/authorize
 Accept: application/json
 Content-Type: application/json
-Cookie: name=value
+Cookie: cookie=value
 ###
