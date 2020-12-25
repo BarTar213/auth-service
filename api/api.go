@@ -81,6 +81,8 @@ func NewApi(options ...func(api *Api)) *Api {
 		users.PATCH("/:login/verify", usrHdlr.VerifyUser)
 	}
 
+	a.Router.GET("/current", middleware.CheckAccount(), usrHdlr.GetCurrentUser)
+
 	auths := a.Router.Group("/auth")
 	{
 		auths.POST("/login", authHdlr.Login)

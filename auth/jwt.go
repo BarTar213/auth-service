@@ -4,6 +4,7 @@ import (
 	"errors"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/BarTar213/auth-service/config"
@@ -128,7 +129,7 @@ func (j *JWT) ValidateCookieJWT(cookie *http.Cookie) (bool, *models.Claims, erro
 }
 
 func (j *JWT) SetAuthHeaders(c *gin.Context, claims *models.Claims) {
-	c.Header("X-Account-Id", claims.Id)
+	c.Header("X-Account-Id", strconv.Itoa(claims.UserID))
 	c.Header("X-Account", claims.Login)
 	c.Header("X-Role", claims.Role)
 }

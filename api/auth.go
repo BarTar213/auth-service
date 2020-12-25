@@ -29,7 +29,7 @@ func NewAuthHandlers(storage storage.Client, jwtClient *auth.JWT, logger *log.Lo
 func (h *AuthHandlers) Authorize(c *gin.Context) {
 	cookie, err := c.Request.Cookie(h.jwtClient.GetCookieName())
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, &models.Response{Error: "missing access token"})
+		c.JSON(http.StatusOK, &models.Response{Data: "passing without authorization"})
 		return
 	}
 

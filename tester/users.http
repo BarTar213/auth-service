@@ -3,6 +3,14 @@ Accept: application/json
 
 ###
 
+GET http://localhost:8081/current
+Accept: application/json
+X-Account-id: 1
+X-Account: bar
+X-Role: standard
+
+###
+
 POST http://localhost:8081/users
 Accept: application/json
 Content-Type: application/json

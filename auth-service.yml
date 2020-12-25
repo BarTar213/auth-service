@@ -12,7 +12,7 @@ headers:
   id: "X-Account-Id"
 jwt:
   path: "secret"
-  issuer: "localhost:8081"
+  issuer: "localhost"
   cookieName: "access_token"
 notificator:
   address: "localhost:8082"
