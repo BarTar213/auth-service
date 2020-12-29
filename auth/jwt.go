@@ -57,7 +57,7 @@ func (j *JWT) generateJWT(user *models.User) (string, *time.Time, error) {
 
 func (j *JWT) generateJWTFromClaims(claims *models.Claims) (string, *time.Time, error) {
 	now := time.Now()
-	if time.Unix(claims.ExpiresAt, 0).After(now.Add(-1 * time.Hour)) {
+	if time.Unix(claims.ExpiresAt, 0).Before(now.Add(-1 * time.Hour)) {
 		return utils.EmptyString, nil, errors.New("token expired")
 	}
 
